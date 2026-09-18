@@ -1,0 +1,31 @@
+name: Alert intervallo
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: alert
+  cancel-in-progress: false
+jobs:
+  controlla:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet curl_cffi requests
+      - uses: actions/cache/restore@v4
+        with:
+          path: stato
+          key: stato-${{ github.run_id }}
+          restore-keys: stato-
+      - run: python alert.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: stato
+          key: stato-${{ github.run_id }}-${{ github.run_attempt }}
